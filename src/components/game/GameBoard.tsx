@@ -11,6 +11,7 @@ import { Scoreboard } from './Scoreboard/Scoreboard';
 import { GameLog } from './GameLog/GameLog';
 import { GameOverModal } from './GameOver/GameOverModal';
 import { Tile } from './Tile/Tile';
+import { ThemeSwitcher } from '@/components/ui/ThemeSwitcher';
 import { useGameStore } from '@/store/gameStore';
 import { useRoomStore } from '@/store/roomStore';
 import { useRealtimeGame } from '@/hooks/useRealtimeGame';
@@ -48,12 +49,16 @@ export function GameBoard({ roomId, playerId }: GameBoardProps) {
     let cancelled = false;
 
     const fetchAndHydrate = () => {
+      // Captured before the request goes out, not when it resolves — this
+      // request and an action's request can complete out of order, and
+      // whichever was *sent* later should always win.
+      const requestedAt = Date.now();
       fetch(`/api/game/state?roomId=${roomId}&playerId=${playerId}`)
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
           if (cancelled || !data) return;
-          hydratePublicState(data.publicState);
-          setMyRack(data.myRack);
+          hydratePublicState(data.publicState, requestedAt);
+          setMyRack(data.myRack, requestedAt);
         })
         .catch(() => undefined);
     };
@@ -95,15 +100,18 @@ export function GameBoard({ roomId, playerId }: GameBoardProps) {
                 <OpponentRack key={p.id} player={p} isCurrentTurn={p.seat === currentTurn} />
               ))}
             </div>
-            {botThinking && (
-              <motion.span
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="whitespace-nowrap text-sm text-amber-400"
-              >
-                Bot pensando…
-              </motion.span>
-            )}
+            <div className="flex items-center gap-3">
+              {botThinking && (
+                <motion.span
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="whitespace-nowrap text-sm text-amber-400"
+                >
+                  Bot pensando…
+                </motion.span>
+              )}
+              <ThemeSwitcher />
+            </div>
           </div>
 
           {/* min-h-0 is load-bearing here: without it a flex child never

@@ -49,8 +49,13 @@ export function CreateRoomForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4 rounded-2xl border border-app-border bg-app-surface p-6">
-      <h2 className="text-lg font-bold text-slate-100">Crear una sala</h2>
+    <form
+      onSubmit={handleSubmit}
+      className="flex flex-col gap-4 rounded-2xl border border-app-border bg-app-surface p-6 shadow-lg shadow-black/10 transition-shadow hover:shadow-xl"
+    >
+      <h2 className="flex items-center gap-2 text-lg font-bold text-slate-100">
+        <span aria-hidden>➕</span> Crear una sala
+      </h2>
 
       <Input
         label="Tu nombre"

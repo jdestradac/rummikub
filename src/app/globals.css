@@ -2,14 +2,58 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ---------------------------------------------------------------------
+   Theme tokens. Every theme defines the same set of CSS variables; the
+   default (classic) values live on :root, and each theme overrides them
+   under [data-theme="..."]. Tailwind's color tokens (tailwind.config.ts)
+   point at these variables, so switching themes needs zero component
+   changes — see src/store/themeStore.ts for how [data-theme] gets set.
+--------------------------------------------------------------------- */
+:root {
+  --color-felt: #1b4332;
+  --color-felt-light: #2d6a4f;
+  --color-app-bg: #0f172a;
+  --color-app-surface: #1e293b;
+  --color-app-border: #334155;
+  --color-tile-red: #e63946;
+  --color-tile-blue: #457b9d;
+  --color-tile-black: #1e293b;
+  --color-tile-orange: #f4a261;
+  --color-tile-joker: #f59e0b;
+  --color-tile-bg: #fff8f0;
+  --felt-vignette-strong: rgba(0, 0, 0, 0.15);
+  --felt-vignette-soft: rgba(255, 255, 255, 0.04);
+}
+
+/* "Treasure Hunt" — an original pirate/treasure-map ambiance (aged
+   parchment tiles, ship's-deck wood table, lantern gold accents). Not
+   affiliated with, and doesn't reproduce any art/names/logos from, any
+   copyrighted pirate-themed media franchise. */
+[data-theme='pirate'] {
+  --color-felt: #3e2412;
+  --color-felt-light: #5c3a1e;
+  --color-app-bg: #0b0f14;
+  --color-app-surface: #1c1710;
+  --color-app-border: #4a3826;
+  --color-tile-red: #b3282d;
+  --color-tile-blue: #1b3a5c;
+  --color-tile-black: #211a12;
+  --color-tile-orange: #c98a2c;
+  --color-tile-joker: #d4a017;
+  --color-tile-bg: #f0e4c8;
+  --felt-vignette-strong: rgba(0, 0, 0, 0.35);
+  --felt-vignette-soft: rgba(255, 214, 128, 0.05);
+}
+
 html,
 body {
   height: 100%;
 }
 
 body {
-  background-color: #0f172a;
+  background-color: var(--color-app-bg);
   color: #f1f5f9;
+  transition: background-color 0.2s ease;
 }
 
 * {
@@ -26,14 +70,15 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: var(--color-app-border);
   border-radius: 9999px;
 }
 
 .felt-texture {
-  background-color: #1b4332;
+  background-color: var(--color-felt);
   background-image:
-    radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.04) 0, transparent 40%),
-    radial-gradient(circle at 80% 60%, rgba(255, 255, 255, 0.03) 0, transparent 45%),
-    radial-gradient(circle at 50% 90%, rgba(0, 0, 0, 0.15) 0, transparent 50%);
+    radial-gradient(circle at 20% 20%, var(--felt-vignette-soft) 0, transparent 40%),
+    radial-gradient(circle at 80% 60%, var(--felt-vignette-soft) 0, transparent 45%),
+    radial-gradient(circle at 50% 90%, var(--felt-vignette-strong) 0, transparent 50%);
+  transition: background-color 0.2s ease;
 }

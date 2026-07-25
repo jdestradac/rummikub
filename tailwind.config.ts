@@ -5,26 +5,26 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        felt: { DEFAULT: '#1B4332', light: '#2D6A4F' },
-        app: { bg: '#0F172A', surface: '#1E293B', border: '#334155' },
+        felt: { DEFAULT: 'var(--color-felt)', light: 'var(--color-felt-light)' },
+        app: { bg: 'var(--color-app-bg)', surface: 'var(--color-app-surface)', border: 'var(--color-app-border)' },
         tile: {
-          red: '#E63946',
-          blue: '#457B9D',
-          black: '#1E293B',
-          orange: '#F4A261',
-          joker: '#F59E0B',
-          bg: '#FFF8F0',
+          red: 'var(--color-tile-red)',
+          blue: 'var(--color-tile-blue)',
+          black: 'var(--color-tile-black)',
+          orange: 'var(--color-tile-orange)',
+          joker: 'var(--color-tile-joker)',
+          bg: 'var(--color-tile-bg)',
         },
       },
       boxShadow: {
         tile: '0 2px 0 #00000040, 0 4px 8px #00000030, inset 0 1px 0 #ffffff60',
-        'tile-selected': '0 0 0 2px #F59E0B, 0 0 12px #F59E0B60',
+        'tile-selected': '0 0 0 2px var(--color-tile-joker), 0 0 12px var(--color-tile-joker)',
         'tile-dragging': '0 8px 24px #00000060, 0 2px 0 #00000040',
       },
       keyframes: {
         'pulse-border': {
-          '0%, 100%': { boxShadow: '0 0 0 2px #F59E0B80, 0 0 12px #F59E0B40' },
-          '50%': { boxShadow: '0 0 0 3px #F59E0B, 0 0 20px #F59E0B80' },
+          '0%, 100%': { boxShadow: '0 0 0 2px var(--color-tile-joker), 0 0 12px var(--color-tile-joker)' },
+          '50%': { boxShadow: '0 0 0 3px var(--color-tile-joker), 0 0 20px var(--color-tile-joker)' },
         },
         'slide-up': {
           from: { transform: 'translateY(8px)', opacity: '0' },
