@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { DndContext, DragOverlay } from '@dnd-kit/core';
 import { motion } from 'framer-motion';
 import { Board } from './Board/Board';
@@ -36,9 +36,29 @@ export function GameBoard({ roomId, playerId }: GameBoardProps) {
   const setMyRack = useGameStore((s) => s.setMyRack);
   const hostPlayerId = roomPlayers.find((p) => p.userId === hostId)?.id ?? null;
 
+  // Forces a full remount of <DndContext> (and its sensors) — see the
+  // visibility-change effect below for why.
+  const [dndInstanceKey, setDndInstanceKey] = useState(0);
+
   useEffect(() => {
     init(roomId, playerId);
   }, [roomId, playerId, init]);
+
+  const fetchAndHydrateRef = useRef<() => void>(() => undefined);
+  fetchAndHydrateRef.current = () => {
+    // Captured before the request goes out, not when it resolves — this
+    // request and an action's request can complete out of order, and
+    // whichever was *sent* later should always win.
+    const requestedAt = Date.now();
+    fetch(`/api/game/state?roomId=${roomId}&playerId=${playerId}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!data) return;
+        hydratePublicState(data.publicState, requestedAt);
+        setMyRack(data.myRack, requestedAt);
+      })
+      .catch(() => undefined);
+  };
 
   // Realtime broadcasts only reach clients already subscribed at the exact
   // moment they fire, so pull the current state once on mount (fresh loads /
@@ -46,31 +66,33 @@ export function GameBoard({ roomId, playerId }: GameBoardProps) {
   // gets dropped — without this, a missed "your turn now" message leaves a
   // player stuck until they manually refresh.
   useEffect(() => {
-    let cancelled = false;
+    fetchAndHydrateRef.current();
+    const interval = setInterval(() => fetchAndHydrateRef.current(), 4000);
+    return () => clearInterval(interval);
+  }, [roomId, playerId]);
 
-    const fetchAndHydrate = () => {
-      // Captured before the request goes out, not when it resolves — this
-      // request and an action's request can complete out of order, and
-      // whichever was *sent* later should always win.
-      const requestedAt = Date.now();
-      fetch(`/api/game/state?roomId=${roomId}&playerId=${playerId}`)
-        .then((res) => (res.ok ? res.json() : null))
-        .then((data) => {
-          if (cancelled || !data) return;
-          hydratePublicState(data.publicState, requestedAt);
-          setMyRack(data.myRack, requestedAt);
-        })
-        .catch(() => undefined);
+  // A backgrounded tab (phone locked, switched apps, laptop closed) can
+  // silently drop the WebSocket connection AND leave a touch/pointer
+  // gesture "in progress" from @dnd-kit's point of view (no touchend ever
+  // fired), which otherwise requires a hard reload to clear. Coming back
+  // into view: force-remount the whole DnD context (fresh sensors, no
+  // leftover stuck gesture) and immediately resync state instead of
+  // waiting for the next poll tick.
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState !== 'visible') return;
+      setDndInstanceKey((k) => k + 1);
+      fetchAndHydrateRef.current();
     };
-
-    fetchAndHydrate();
-    const interval = setInterval(fetchAndHydrate, 4000);
-
+    document.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('focus', handleVisibility);
+    window.addEventListener('pageshow', handleVisibility);
     return () => {
-      cancelled = true;
-      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('focus', handleVisibility);
+      window.removeEventListener('pageshow', handleVisibility);
     };
-  }, [roomId, playerId, hydratePublicState, setMyRack]);
+  }, []);
 
   useRealtimeGame(roomId, playerId);
 
@@ -87,6 +109,7 @@ export function GameBoard({ roomId, playerId }: GameBoardProps) {
 
   return (
     <DndContext
+      key={dndInstanceKey}
       sensors={sensors}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}

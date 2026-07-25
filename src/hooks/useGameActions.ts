@@ -21,9 +21,10 @@ export function useGameActions(roomId: string | null, playerId: string | null) {
   const hydratePublicState = useGameStore((s) => s.hydratePublicState);
   const setMyRack = useGameStore((s) => s.setMyRack);
   const selectTile = useGameStore((s) => s.selectTile);
-  const setHasPlacedThisTurn = useGameStore((s) => s.setHasPlacedThisTurn);
   const optimisticPlaceFromRack = useGameStore((s) => s.optimisticPlaceFromRack);
   const optimisticMoveOnBoard = useGameStore((s) => s.optimisticMoveOnBoard);
+  const optimisticUndo = useGameStore((s) => s.optimisticUndo);
+  const optimisticAdvanceTurnForDraw = useGameStore((s) => s.optimisticAdvanceTurnForDraw);
 
   /**
    * Sends an action to the server and reconciles the store with the
@@ -54,8 +55,6 @@ export function useGameActions(roomId: string | null, playerId: string | null) {
           const message = data.error ?? 'Ese arreglo no es válido.';
           setError(message);
           toast.error(message);
-        } else if (action.type === 'UNDO_TURN') {
-          setHasPlacedThisTurn(false);
         }
 
         return data.success;
@@ -68,7 +67,7 @@ export function useGameActions(roomId: string | null, playerId: string | null) {
         setSubmitting(false);
       }
     },
-    [roomId, playerId, setSubmitting, setError, hydratePublicState, setMyRack, setHasPlacedThisTurn],
+    [roomId, playerId, setSubmitting, setError, hydratePublicState, setMyRack],
   );
 
   /**
@@ -149,43 +148,42 @@ export function useGameActions(roomId: string | null, playerId: string | null) {
     return ok;
   }, [dispatch, selectTile]);
 
-  const undoTurn = useCallback(() => dispatch({ type: 'UNDO_TURN' }), [dispatch]);
+  // Instant: snap board/rack back to how they were at the start of this
+  // turn (already tracked locally), then confirm with the server in the
+  // background — no reason to make the player wait on a round-trip just to
+  // see their own moves disappear.
+  const undoTurn = useCallback(() => {
+    optimisticUndo();
+    dispatchOptimistic({ type: 'UNDO_TURN' });
+  }, [dispatchOptimistic, optimisticUndo]);
 
-  const drawTile = useCallback(async (): Promise<boolean> => {
-    if (!roomId || !playerId) return false;
-    setSubmitting(true);
-    setError(null);
+  // Instant: we already know whose turn is next and can decrement the pile
+  // count locally, so the turn hands off immediately. The actual drawn
+  // tile pops into the rack a moment later once the response arrives (that
+  // part can't be predicted client-side — the pile is shuffled).
+  const drawTile = useCallback(() => {
+    if (!roomId || !playerId) return;
+    optimisticAdvanceTurnForDraw();
     const requestedAt = Date.now();
 
-    try {
-      const res = await fetch('/api/game/draw', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ roomId, playerId }),
+    fetch('/api/game/draw', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ roomId, playerId }),
+    })
+      .then((res) => res.json())
+      .then((data: ActionResponse) => {
+        if (data.publicState) hydratePublicState(data.publicState, requestedAt);
+        if (data.myRack) setMyRack(data.myRack, requestedAt);
+
+        if (!data.success) {
+          toast.error(data.error ?? 'No se pudo robar una ficha.');
+        }
+      })
+      .catch(() => {
+        toast.error('Error de red — reintenta si el turno no avanzó.');
       });
-      const data: ActionResponse = await res.json();
-
-      if (data.publicState) hydratePublicState(data.publicState, requestedAt);
-      if (data.myRack) setMyRack(data.myRack, requestedAt);
-
-      if (!data.success) {
-        const message = data.error ?? 'No se pudo robar una ficha.';
-        setError(message);
-        toast.error(message);
-      } else {
-        toast.info('Robaste una ficha.');
-      }
-
-      return data.success;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Error de red — intenta de nuevo.';
-      setError(message);
-      toast.error(message);
-      return false;
-    } finally {
-      setSubmitting(false);
-    }
-  }, [roomId, playerId, hydratePublicState, setMyRack, setSubmitting, setError]);
+  }, [roomId, playerId, hydratePublicState, setMyRack, optimisticAdvanceTurnForDraw]);
 
   return {
     placeTile,

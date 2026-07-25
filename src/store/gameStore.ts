@@ -20,6 +20,7 @@ interface GameStoreState {
   myRack: Tile[];
   selectedTileId: string | null;
   rackSort: RackSort;
+  turnStartSnapshot: { board: TileGroup[]; myRack: Tile[] } | null;
 
   events: GameEvent[];
   isSubmitting: boolean;
@@ -36,6 +37,8 @@ interface GameStoreState {
   selectTile: (tileId: string | null) => void;
   optimisticPlaceFromRack: (tileId: string, groupId: string, position: number) => void;
   optimisticMoveOnBoard: (tileId: string, fromGroupId: string, toGroupId: string, position: number) => void;
+  optimisticUndo: () => void;
+  optimisticAdvanceTurnForDraw: () => void;
   setRackSort: (sort: RackSort) => void;
   pushEvent: (event: GameEvent) => void;
   setFinalScores: (scores: Score[] | null) => void;
@@ -58,6 +61,7 @@ const initialState = {
   myRack: [] as Tile[],
   selectedTileId: null as string | null,
   rackSort: 'color' as RackSort,
+  turnStartSnapshot: null as { board: TileGroup[]; myRack: Tile[] } | null,
   events: [] as GameEvent[],
   isSubmitting: false,
   botThinking: false,
@@ -95,7 +99,16 @@ export const useGameStore = create<GameStoreState>((set) => ({
   setHasPlacedThisTurn: (value) => set({ hasPlacedThisTurn: value }),
 
   setMyRack: (rack, requestedAt = Date.now()) =>
-    set((s) => (requestedAt < s.lastHydratedAt ? {} : { myRack: rack })),
+    set((s) => {
+      if (requestedAt < s.lastHydratedAt) return {};
+      // Whenever there are no pending moves, (board, rack) is a safe point
+      // to snap back to — keep it fresh so Undo can restore instantly
+      // without waiting on the server.
+      if (!s.hasPlacedThisTurn) {
+        return { myRack: rack, turnStartSnapshot: { board: s.board, myRack: rack } };
+      }
+      return { myRack: rack };
+    }),
 
   setBoard: (board) => set({ board }),
 
@@ -136,6 +149,31 @@ export const useGameStore = create<GameStoreState>((set) => ({
         : [...board, createGroup([tile], toGroupId)];
 
       return { board, hasPlacedThisTurn: true };
+    }),
+
+  optimisticUndo: () =>
+    set((s) => {
+      if (!s.turnStartSnapshot) return {};
+      return {
+        board: s.turnStartSnapshot.board,
+        myRack: s.turnStartSnapshot.myRack,
+        hasPlacedThisTurn: false,
+        selectedTileId: null,
+      };
+    }),
+
+  optimisticAdvanceTurnForDraw: () =>
+    set((s) => {
+      const seats = s.players.map((p) => p.seat).sort((a, b) => a - b);
+      if (seats.length === 0) return {};
+      const idx = seats.indexOf(s.currentTurn);
+      const nextTurn = seats[(idx + 1) % seats.length]!;
+      return {
+        currentTurn: nextTurn,
+        drawPileCount: Math.max(0, s.drawPileCount - 1),
+        hasPlacedThisTurn: false,
+        selectedTileId: null,
+      };
     }),
 
   setRackSort: (sort) => set({ rackSort: sort }),
