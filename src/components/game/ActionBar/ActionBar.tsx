@@ -61,8 +61,9 @@ export function ActionBar({ roomId, playerId }: ActionBarProps) {
 
   if (!isMyTurn) {
     return (
-      <div className="flex items-center justify-center gap-3 border-t border-app-border bg-app-surface/60 px-4 py-3 text-sm text-slate-400">
-        Waiting for {players.find((p) => p.seat === currentTurn)?.name ?? 'the next player'}…
+      <div className="flex items-center justify-center gap-2 border-t border-app-border bg-app-surface/60 px-4 py-3 text-sm text-slate-400">
+        <span className="h-2 w-2 animate-pulse rounded-full bg-amber-400" />
+        Esperando a {players.find((p) => p.seat === currentTurn)?.name ?? 'el siguiente jugador'}…
       </div>
     );
   }

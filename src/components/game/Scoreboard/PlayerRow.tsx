@@ -18,10 +18,10 @@ export function PlayerRow({ player, isCurrentTurn, isMe }: PlayerRowProps) {
       <span className={cn('h-2 w-2 rounded-full', player.isConnected ? 'bg-emerald-400' : 'bg-slate-600')} />
       <span className={cn('flex-1 truncate font-medium', isMe ? 'text-blue-300' : 'text-slate-200')}>
         {player.name}
-        {isMe && ' (you)'}
+        {isMe && ' (tú)'}
       </span>
-      {player.hasOpened && <span className="text-xs text-emerald-400" title="Opened">✓</span>}
-      <span className="font-mono text-xs text-slate-400">{player.tileCount} tiles</span>
+      {player.hasOpened && <span className="text-xs text-emerald-400" title="Ya abrió">✓</span>}
+      <span className="font-mono text-xs text-slate-400">{player.tileCount} fichas</span>
       <span className="w-10 text-right font-mono text-sm text-slate-100">{player.score}</span>
     </li>
   );

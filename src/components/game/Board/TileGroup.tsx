@@ -13,27 +13,33 @@ interface TileGroupProps {
   interactive?: boolean;
 }
 
+const GROUP_TRANSITION = { duration: 0.18, ease: 'easeOut' } as const;
+
 export function TileGroupComponent({ group, interactive = true }: TileGroupProps) {
   const selectedTileId = useGameStore((s) => s.selectedTileId);
   const selectTile = useGameStore((s) => s.selectTile);
+  const isComplete = group.tiles.length >= 3 && isValidGroup(group.tiles);
   const valid = group.tiles.length === 0 || isValidGroup(group.tiles);
 
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, scale: 0.9 }}
+      initial={{ opacity: 0, scale: 0.92 }}
       animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.9 }}
+      exit={{ opacity: 0, scale: 0.92 }}
+      transition={GROUP_TRANSITION}
       className={cn(
-        'flex items-center gap-0.5 rounded-xl border bg-white/10 p-2 backdrop-blur-sm',
-        valid ? 'border-white/10' : 'border-red-500/70 animate-shake',
+        'flex items-center gap-0.5 rounded-xl border p-2 backdrop-blur-sm transition-colors',
+        isComplete && 'border-emerald-400/50 bg-emerald-400/10 shadow-[0_0_16px_-4px_rgba(52,211,153,0.5)]',
+        !isComplete && valid && 'border-white/15 bg-white/10',
+        !valid && 'border-red-500/70 bg-red-500/10 animate-shake',
       )}
     >
       {interactive && (
         <DropZone
           id={`${group.id}-pos-0`}
           data={{ type: 'board-group', groupId: group.id, position: 0 }}
-          className="w-1.5 self-stretch rounded"
+          className="w-2 self-stretch rounded"
         />
       )}
       {group.tiles.map((tile, index) => (
@@ -50,7 +56,7 @@ export function TileGroupComponent({ group, interactive = true }: TileGroupProps
             <DropZone
               id={`${group.id}-pos-${index + 1}`}
               data={{ type: 'board-group', groupId: group.id, position: index + 1 }}
-              className="w-1.5 self-stretch rounded"
+              className="w-2 self-stretch rounded"
             />
           )}
         </div>

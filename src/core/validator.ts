@@ -98,13 +98,41 @@ export function validateBoard(groups: TileGroup[]): ValidationResult {
 }
 
 /**
- * Sum of tile numbers; a joker counts as the value of the tile it
- * represents, or 30 if unassigned/unknown.
+ * Infers what number each joker in `tiles` stands for, purely from its
+ * position within a *valid* set or run (e.g. a joker sitting between a red 6
+ * and a red 8 is a red 7). Returns `undefined` per-tile when `tiles` isn't a
+ * valid group, or when there's no non-joker tile to anchor the inference to.
+ */
+function inferJokerNumbers(tiles: Tile[]): (number | undefined)[] {
+  if (isValidSet(tiles)) {
+    const setNumber = tiles.find((t) => !t.isJoker)?.number ?? undefined;
+    return tiles.map(() => setNumber);
+  }
+
+  if (isValidRun(tiles)) {
+    const anchorIndex = tiles.findIndex((t) => !t.isJoker);
+    if (anchorIndex === -1) return tiles.map(() => undefined);
+    const anchorNumber = tiles[anchorIndex]!.number as number;
+    return tiles.map((_, i) => anchorNumber + (i - anchorIndex));
+  }
+
+  return tiles.map(() => undefined);
+}
+
+/**
+ * Sum of tile numbers. Per official Rummikub scoring rules, a joker that is
+ * part of a valid meld counts as the number/color it stands in for there
+ * (e.g. filling a gap in a run of 7s counts as 7) — the flat 30-point value
+ * only applies to a joker that's still unplayed in a player's rack. This
+ * function infers the contextual value automatically when `tiles` forms a
+ * valid set/run, and otherwise falls back to an explicit `representsNumber`
+ * or the 30-point default (correct for scoring an un-melded rack).
  */
 export function calculateGroupValue(tiles: Tile[]): number {
-  return tiles.reduce((sum, tile) => {
+  const inferred = inferJokerNumbers(tiles);
+  return tiles.reduce((sum, tile, index) => {
     if (tile.isJoker) {
-      return sum + (tile.representsNumber ?? UNKNOWN_JOKER_VALUE);
+      return sum + (tile.representsNumber ?? inferred[index] ?? UNKNOWN_JOKER_VALUE);
     }
     return sum + (tile.number ?? 0);
   }, 0);
@@ -127,4 +155,41 @@ export function canOpenWith(groups: TileGroup[]): boolean {
 
 export function allColors(): TileColor[] {
   return [...TILE_COLORS];
+}
+
+/**
+ * Returns a copy of `tiles` with every joker's `representsColor` /
+ * `representsNumber` filled in from context, when the group is a valid set
+ * or run. Used to persist joker identity once a board group is confirmed,
+ * so the UI can show what each joker stands for.
+ */
+export function resolveJokerIdentities(tiles: Tile[]): Tile[] {
+  const isSet = isValidSet(tiles);
+  const isRun = !isSet && isValidRun(tiles);
+  if (!isSet && !isRun) return tiles;
+
+  const inferredNumbers = inferJokerNumbers(tiles);
+  const runColor = isRun ? (tiles.find((t) => !t.isJoker)?.color as TileColor) : undefined;
+  const usedColors = new Set(tiles.filter((t) => !t.isJoker).map((t) => t.color as TileColor));
+  const missingColors = TILE_COLORS.filter((c) => !usedColors.has(c));
+  let missingColorIndex = 0;
+
+  return tiles.map((tile, index) => {
+    if (!tile.isJoker) return tile;
+    const representsNumber = inferredNumbers[index];
+    if (representsNumber === undefined) return tile;
+
+    if (isSet) {
+      const representsColor = missingColors[missingColorIndex];
+      missingColorIndex += 1;
+      return { ...tile, representsColor, representsNumber };
+    }
+
+    return { ...tile, representsColor: runColor, representsNumber };
+  });
+}
+
+/** Applies {@link resolveJokerIdentities} to every group on the board. */
+export function resolveBoardJokerIdentities(groups: TileGroup[]): TileGroup[] {
+  return groups.map((g) => ({ ...g, tiles: resolveJokerIdentities(g.tiles) }));
 }

@@ -18,7 +18,7 @@ import {
   replaceGroup,
   splitGroup as splitGroupPrimitive,
 } from './board';
-import { canOpenWith, validateBoard } from './validator';
+import { canOpenWith, resolveBoardJokerIdentities, validateBoard } from './validator';
 import { createShuffledDeck, dealTiles } from './deck';
 
 const PENALTY_TILE_COUNT = 3;
@@ -74,13 +74,13 @@ function fail(state: ServerGameState, error: string): ActionResult {
  * result. Never mutates its input.
  */
 export function applyAction(state: ServerGameState, action: PlayerAction, playerId: string): ActionResult {
-  if (state.phase !== 'playing') return fail(state, 'Game is not currently in progress.');
+  if (state.phase !== 'playing') return fail(state, 'La partida no está en curso.');
 
   const working = cloneState(state);
   const player = currentPlayer(working);
 
-  if (!player) return fail(state, 'No active player found for the current turn.');
-  if (player.id !== playerId) return fail(state, 'It is not your turn.');
+  if (!player) return fail(state, 'No se encontró un jugador activo para este turno.');
+  if (player.id !== playerId) return fail(state, 'No es tu turno.');
 
   switch (action.type) {
     case 'PLACE_TILE':
@@ -98,7 +98,7 @@ export function applyAction(state: ServerGameState, action: PlayerAction, player
     case 'DRAW_TILE':
       return handleDrawTile(working, playerId);
     default:
-      return fail(state, 'Unknown action type.');
+      return fail(state, 'Tipo de acción desconocido.');
   }
 }
 
@@ -111,7 +111,7 @@ function handlePlaceTile(
 ): ActionResult {
   const rack = state.racks[playerId] ?? [];
   const tileIndex = rack.findIndex((t) => t.id === tileId);
-  if (tileIndex === -1) return fail(state, 'Tile not found in your rack.');
+  if (tileIndex === -1) return fail(state, 'Ficha no encontrada en tu atril.');
 
   const tile = rack[tileIndex]!;
   const newRack = [...rack];
@@ -138,10 +138,10 @@ function handleMoveTile(
   position: number,
 ): ActionResult {
   const fromGroup = findGroupById(state.board, fromGroupId);
-  if (!fromGroup) return fail(state, 'Source group not found on the board.');
+  if (!fromGroup) return fail(state, 'Grupo de origen no encontrado en el tablero.');
 
   const { group: updatedFrom, tile } = removeTileFromGroup(fromGroup, tileId);
-  if (!tile) return fail(state, 'Tile not found in the source group.');
+  if (!tile) return fail(state, 'Ficha no encontrada en el grupo de origen.');
 
   state.board = replaceGroup(state.board, fromGroupId, updatedFrom.tiles.length ? updatedFrom : null);
 
@@ -169,7 +169,7 @@ function handleCreateGroup(state: ServerGameState, playerId: string, tileIds: st
 
   for (const id of tileIds) {
     const idx = remaining.findIndex((t) => t.id === id);
-    if (idx === -1) return fail(state, `Tile ${id} not found in your rack.`);
+    if (idx === -1) return fail(state, `Ficha ${id} no encontrada en tu atril.`);
     tiles.push(remaining[idx]!);
     remaining = remaining.filter((_, i) => i !== idx);
   }
@@ -182,8 +182,8 @@ function handleCreateGroup(state: ServerGameState, playerId: string, tileIds: st
 
 function handleSplitGroup(state: ServerGameState, groupId: string, splitAt: number): ActionResult {
   const group = findGroupById(state.board, groupId);
-  if (!group) return fail(state, 'Group not found on the board.');
-  if (splitAt <= 0 || splitAt >= group.tiles.length) return fail(state, 'Invalid split position.');
+  if (!group) return fail(state, 'Grupo no encontrado en el tablero.');
+  if (splitAt <= 0 || splitAt >= group.tiles.length) return fail(state, 'Posición de división inválida.');
 
   const [left, right] = splitGroupPrimitive(group, splitAt);
   state.board = [...replaceGroup(state.board, groupId, null), left, right];
@@ -210,7 +210,7 @@ function drawPenalty(state: ServerGameState, playerId: string, reason: string): 
 
 function handleConfirmTurn(state: ServerGameState, playerId: string): ActionResult {
   const player = state.players.find((p) => p.id === playerId);
-  if (!player) return fail(state, 'Player not found.');
+  if (!player) return fail(state, 'Jugador no encontrado.');
 
   const snapshot = state.turnSnapshot ?? { board: [], rack: state.racks[playerId] ?? [] };
   const snapshotTileIds = allBoardTileIds(snapshot.board);
@@ -218,22 +218,27 @@ function handleConfirmTurn(state: ServerGameState, playerId: string): ActionResu
   const newTileIds = new Set([...currentTileIds].filter((id) => !snapshotTileIds.has(id)));
 
   if (newTileIds.size === 0) {
-    return fail(state, 'You must place at least one tile or draw before confirming.');
+    return fail(state, 'Debes colocar al menos una ficha o robar antes de confirmar.');
   }
 
   const boardValidation = validateBoard(state.board);
   if (!boardValidation.valid) {
-    return drawPenalty(state, playerId, 'The board arrangement is not valid.');
+    return drawPenalty(state, playerId, 'El arreglo del tablero no es válido.');
   }
+
+  // Persist what each joker on the board now represents (color + number),
+  // inferred from its position in its set/run, so scoring and the UI both
+  // reflect it correctly from here on.
+  state.board = resolveBoardJokerIdentities(state.board);
 
   if (!player.hasOpened) {
     const touchedGroups = state.board.filter((g) => g.tiles.some((t) => newTileIds.has(t.id)));
     const fullyNewGroups = touchedGroups.every((g) => g.tiles.every((t) => newTileIds.has(t.id)));
     if (!fullyNewGroups) {
-      return drawPenalty(state, playerId, 'You cannot rearrange the board before your first meld.');
+      return drawPenalty(state, playerId, 'No puedes reorganizar el tablero antes de tu primera jugada.');
     }
     if (!canOpenWith(touchedGroups)) {
-      return drawPenalty(state, playerId, 'Your opening move must total at least 30 points.');
+      return drawPenalty(state, playerId, 'Tu jugada inicial debe sumar al menos 30 puntos.');
     }
     player.hasOpened = true;
   }
@@ -245,7 +250,7 @@ function handleConfirmTurn(state: ServerGameState, playerId: string): ActionResu
     return {
       success: true,
       newState: state,
-      event: { playerId, playerName: player.name, eventType: 'win', description: `${player.name} wins!` },
+      event: { playerId, playerName: player.name, eventType: 'win', description: `¡${player.name} ganó la partida!` },
     };
   }
 
@@ -256,12 +261,12 @@ function handleConfirmTurn(state: ServerGameState, playerId: string): ActionResu
   return {
     success: true,
     newState: state,
-    event: { playerId, playerName: player.name, eventType: 'place', description: `${player.name} confirmed their turn.` },
+    event: { playerId, playerName: player.name, eventType: 'place', description: `${player.name} confirmó su turno.` },
   };
 }
 
 function handleUndoTurn(state: ServerGameState, playerId: string): ActionResult {
-  if (!state.turnSnapshot) return fail(state, 'Nothing to undo.');
+  if (!state.turnSnapshot) return fail(state, 'No hay nada que deshacer.');
   state.board = cloneBoard(state.turnSnapshot.board);
   state.racks[playerId] = [...state.turnSnapshot.rack];
   return { success: true, newState: state };
@@ -274,12 +279,12 @@ function handleDrawTile(state: ServerGameState, playerId: string): ActionResult 
     const snapshotTileIds = allBoardTileIds(snapshot.board);
     const hasPlacedTiles = [...currentTileIds].some((id) => !snapshotTileIds.has(id));
     if (hasPlacedTiles) {
-      return fail(state, 'You cannot draw after placing tiles this turn. Undo first.');
+      return fail(state, 'No puedes robar después de colocar fichas este turno. Deshaz primero.');
     }
   }
 
   const tile = state.drawPile.pop();
-  if (!tile) return fail(state, 'The draw pile is empty.');
+  if (!tile) return fail(state, 'El mazo está vacío.');
 
   const rack = state.racks[playerId] ?? [];
   state.racks[playerId] = [...rack, tile];
@@ -293,17 +298,17 @@ function handleDrawTile(state: ServerGameState, playerId: string): ActionResult 
   return {
     success: true,
     newState: state,
-    event: { playerId, playerName, eventType: 'draw', description: `${playerName} drew a tile.` },
+    event: { playerId, playerName, eventType: 'draw', description: `${playerName} robó una ficha.` },
   };
 }
 
 /** Applies a bot's computed move (see core/ai.ts) directly to the state. */
 export function applyBotMove(state: ServerGameState, botId: string, move: BotMove): ActionResult {
-  if (state.phase !== 'playing') return fail(state, 'Game is not currently in progress.');
+  if (state.phase !== 'playing') return fail(state, 'La partida no está en curso.');
 
   const working = cloneState(state);
   const player = working.players.find((p) => p.id === botId);
-  if (!player) return fail(state, 'Bot not found.');
+  if (!player) return fail(state, 'Bot no encontrado.');
 
   if (move.shouldDraw) {
     return handleDrawTile(working, botId);
@@ -339,7 +344,7 @@ export function applyBotMove(state: ServerGameState, botId: string, move: BotMov
     return {
       success: true,
       newState: working,
-      event: { playerId: botId, playerName: player.name, eventType: 'win', description: `${player.name} wins!` },
+      event: { playerId: botId, playerName: player.name, eventType: 'win', description: `¡${player.name} ganó la partida!` },
     };
   }
 
@@ -354,7 +359,7 @@ export function applyBotMove(state: ServerGameState, botId: string, move: BotMov
       playerId: botId,
       playerName: player.name,
       eventType: 'bot_play',
-      description: `${player.name} placed ${placedCount} tile(s).`,
+      description: `${player.name} colocó ${placedCount} ficha(s).`,
     },
   };
 }
@@ -381,10 +386,14 @@ export function initializeGame(roomId: string, players: NewPlayerInput[]): Serve
       };
     });
 
+  // Official rules: whoever would draw the highest tile starts, i.e. a
+  // random player — not always the host/seat 0.
+  const startingSeat = serverPlayers[Math.floor(Math.random() * serverPlayers.length)]!.seat;
+
   const state: ServerGameState = {
     roomId,
     phase: 'playing',
-    currentTurn: 0,
+    currentTurn: startingSeat,
     board: [],
     drawPile,
     racks,
@@ -393,7 +402,7 @@ export function initializeGame(roomId: string, players: NewPlayerInput[]): Serve
     winnerId: null,
   };
 
-  state.turnSnapshot = snapshotFor(state, playerIdForSeat(state, 0));
+  state.turnSnapshot = snapshotFor(state, playerIdForSeat(state, startingSeat));
   return state;
 }
 

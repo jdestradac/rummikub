@@ -27,7 +27,7 @@ export async function runGameAction(
 ): Promise<RunGameActionOutcome> {
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
     const loaded = await fetchServerGameState(supabase, roomId);
-    if (!loaded) return { ok: false, error: 'Game not found.', status: 404 };
+    if (!loaded) return { ok: false, error: 'Partida no encontrada.', status: 404 };
 
     const result = actionFn(loaded.state);
     const saved = await saveGameState(supabase, result.newState, loaded.updatedAt);
@@ -71,5 +71,5 @@ export async function runGameAction(
     return { ok: true, result, myRack: result.newState.racks[playerId] ?? [] };
   }
 
-  return { ok: false, error: 'Could not save the move — please try again.', status: 409 };
+  return { ok: false, error: 'No se pudo guardar la jugada — intenta de nuevo.', status: 409 };
 }

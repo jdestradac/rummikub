@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     const json = await request.json();
     const parsed = bodySchema.safeParse(json);
     if (!parsed.success) {
-      return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Invalid request.' }, { status: 400 });
+      return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Solicitud inválida.' }, { status: 400 });
     }
 
     const supabase = getSupabaseServiceRoleClient();
@@ -24,6 +24,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error('POST /api/game/presence failed:', err);
-    return NextResponse.json({ error: 'Failed to update presence.' }, { status: 500 });
+    return NextResponse.json({ error: 'No se pudo actualizar la conexión.' }, { status: 500 });
   }
 }

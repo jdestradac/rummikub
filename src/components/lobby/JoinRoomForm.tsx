@@ -23,7 +23,7 @@ export function JoinRoomForm() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim() || !code.trim()) {
-      toast.error('Enter your name and a room code.');
+      toast.error('Escribe tu nombre y el código de la sala.');
       return;
     }
 
@@ -35,7 +35,7 @@ export function JoinRoomForm() {
         body: JSON.stringify({ name: name.trim() }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? 'Failed to join room.');
+      if (!res.ok) throw new Error(data.error ?? 'No se pudo unir a la sala.');
 
       saveSession({
         roomId: data.roomId,
@@ -46,7 +46,7 @@ export function JoinRoomForm() {
       });
       router.push(`/room/${code.trim().toUpperCase()}`);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to join room.');
+      toast.error(err instanceof Error ? err.message : 'No se pudo unir a la sala.');
     } finally {
       setLoading(false);
     }
@@ -54,19 +54,19 @@ export function JoinRoomForm() {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4 rounded-2xl border border-app-border bg-app-surface p-6">
-      <h2 className="text-lg font-bold text-slate-100">Join a room</h2>
+      <h2 className="text-lg font-bold text-slate-100">Unirse a una sala</h2>
 
       <Input
-        label="Your name"
+        label="Tu nombre"
         value={name}
         onChange={(e) => setName(e.target.value)}
-        placeholder="e.g. Sam"
+        placeholder="ej. Sam"
         maxLength={24}
         required
       />
 
       <Input
-        label="Room code"
+        label="Código de la sala"
         value={code}
         onChange={(e) => setCode(e.target.value.toUpperCase())}
         placeholder="ABC123"
@@ -76,7 +76,7 @@ export function JoinRoomForm() {
       />
 
       <Button type="submit" variant="secondary" size="lg" loading={loading} disabled={!isReady}>
-        Join room
+        Unirse
       </Button>
     </form>
   );

@@ -17,7 +17,7 @@ export function UndoButton({ roomId, playerId }: { roomId: string | null; player
       loading={isSubmitting}
       onClick={() => undoTurn()}
     >
-      Undo
+      ↺ Deshacer
     </Button>
   );
 }

@@ -9,7 +9,7 @@ export default function HomePage() {
         <h1 className="text-4xl font-black tracking-tight text-slate-100 sm:text-5xl">
           Rummi<span className="text-amber-400">kub</span>
         </h1>
-        <p className="mt-2 text-slate-400">Real-time multiplayer tile rummy. Play with friends, no download.</p>
+        <p className="mt-2 text-slate-400">El clásico juego de fichas, multijugador en tiempo real. Juega con amigos, sin descargas.</p>
       </div>
 
       <div className="grid w-full gap-6 sm:grid-cols-2">
@@ -20,8 +20,8 @@ export default function HomePage() {
       </div>
 
       <p className="max-w-md text-center text-xs text-slate-500">
-        Best experienced on a desktop-sized screen (1024px+). Drag tiles from your rack onto the table to build
-        sets and runs — your first move must total at least 30 points.
+        Se ve mejor en pantallas de escritorio (1024px+). Arrastra fichas de tu atril a la mesa para armar
+        juegos y escaleras — tu primera jugada debe sumar al menos 30 puntos.
       </p>
     </main>
   );

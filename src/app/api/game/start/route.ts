@@ -19,23 +19,23 @@ export async function POST(request: NextRequest) {
     const json = await request.json();
     const parsed = bodySchema.safeParse(json);
     if (!parsed.success) {
-      return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Invalid request.' }, { status: 400 });
+      return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Solicitud inválida.' }, { status: 400 });
     }
     const { roomId, hostPlayerId } = parsed.data;
 
     const supabase = getSupabaseServiceRoleClient();
 
     const room = await getRoomById(supabase, roomId);
-    if (!room) return NextResponse.json({ error: 'Room not found.' }, { status: 404 });
+    if (!room) return NextResponse.json({ error: 'Sala no encontrada.' }, { status: 404 });
 
     const hostPlayer = await getPlayerById(supabase, hostPlayerId);
     if (!hostPlayer || hostPlayer.room_id !== roomId || hostPlayer.user_id !== room.host_id) {
-      return NextResponse.json({ error: 'Only the host can start the game.' }, { status: 403 });
+      return NextResponse.json({ error: 'Solo el anfitrión puede iniciar la partida.' }, { status: 403 });
     }
 
     const players = await getPlayersByRoom(supabase, roomId);
     if (players.length < MIN_PLAYERS) {
-      return NextResponse.json({ error: `Need at least ${MIN_PLAYERS} players to start.` }, { status: 400 });
+      return NextResponse.json({ error: `Se necesitan al menos ${MIN_PLAYERS} jugadores para empezar.` }, { status: 400 });
     }
 
     const inputs: NewPlayerInput[] = players.map((p) => ({
@@ -60,6 +60,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, publicState });
   } catch (err) {
     console.error('POST /api/game/start failed:', err);
-    return NextResponse.json({ error: 'Failed to start the game.' }, { status: 500 });
+    return NextResponse.json({ error: 'No se pudo iniciar la partida.' }, { status: 500 });
   }
 }

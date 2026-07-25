@@ -19,7 +19,7 @@ export function CreateRoomForm() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) {
-      toast.error('Enter a display name first.');
+      toast.error('Primero escribe un nombre.');
       return;
     }
 
@@ -31,7 +31,7 @@ export function CreateRoomForm() {
         body: JSON.stringify({ name: name.trim(), maxPlayers, botCount }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? 'Failed to create room.');
+      if (!res.ok) throw new Error(data.error ?? 'No se pudo crear la sala.');
 
       saveSession({
         roomId: data.roomId,
@@ -42,7 +42,7 @@ export function CreateRoomForm() {
       });
       router.push(`/room/${data.roomCode}`);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to create room.');
+      toast.error(err instanceof Error ? err.message : 'No se pudo crear la sala.');
     } finally {
       setLoading(false);
     }
@@ -50,13 +50,13 @@ export function CreateRoomForm() {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4 rounded-2xl border border-app-border bg-app-surface p-6">
-      <h2 className="text-lg font-bold text-slate-100">Create a room</h2>
+      <h2 className="text-lg font-bold text-slate-100">Crear una sala</h2>
 
       <Input
-        label="Your name"
+        label="Tu nombre"
         value={name}
         onChange={(e) => setName(e.target.value)}
-        placeholder="e.g. Jordan"
+        placeholder="ej. Jordan"
         maxLength={24}
         required
       />
@@ -64,7 +64,7 @@ export function CreateRoomForm() {
       <div className="grid grid-cols-2 gap-4">
         <div className="flex flex-col gap-1.5">
           <label className="text-sm font-medium text-slate-300" htmlFor="maxPlayers">
-            Max players
+            Máx. de jugadores
           </label>
           <select
             id="maxPlayers"
@@ -74,7 +74,7 @@ export function CreateRoomForm() {
           >
             {Array.from({ length: MAX_PLAYERS - MIN_PLAYERS + 1 }, (_, i) => MIN_PLAYERS + i).map((n) => (
               <option key={n} value={n}>
-                {n} players
+                {n} jugadores
               </option>
             ))}
           </select>
@@ -100,7 +100,7 @@ export function CreateRoomForm() {
       </div>
 
       <Button type="submit" size="lg" loading={loading} disabled={!isReady}>
-        Create room
+        Crear sala
       </Button>
     </form>
   );

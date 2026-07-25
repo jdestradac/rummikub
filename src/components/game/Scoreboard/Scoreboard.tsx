@@ -14,9 +14,9 @@ export function Scoreboard() {
   return (
     <div className="flex h-full flex-col gap-3 rounded-xl border border-app-border bg-app-surface p-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-400">Scoreboard</h3>
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-400">Puntuación</h3>
         <span className="rounded bg-app-bg px-2 py-1 font-mono text-xs text-slate-300">
-          Pile: {drawPileCount}
+          Mazo: {drawPileCount}
         </span>
       </div>
       <ul className="flex flex-col gap-1.5">

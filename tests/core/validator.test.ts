@@ -94,6 +94,20 @@ describe('calculateGroupValue / canOpenWith', () => {
     expect(calculateGroupValue([tile('red', 7), tile('blue', 7), tile('black', 7)])).toBe(21);
   });
 
+  it('values an unassigned joker inside a valid set as the set number, not the flat 30', () => {
+    const tiles = [tile('red', 7), tile('blue', 7), joker()];
+    expect(calculateGroupValue(tiles)).toBe(21); // 7 + 7 + 7, not 7 + 7 + 30
+  });
+
+  it('values an unassigned joker inside a valid run by its gap position', () => {
+    const tiles = [tile('orange', 5), joker(), tile('orange', 7)];
+    expect(calculateGroupValue(tiles)).toBe(18); // 5 + 6 + 7, not 5 + 30 + 7
+  });
+
+  it('still falls back to 30 for a joker with no group context (e.g. sitting alone in a rack)', () => {
+    expect(calculateGroupValue([joker()])).toBe(30);
+  });
+
   it('rejects an opening meld under 30 points', () => {
     const group = { id: 'g1', type: 'set' as const, tiles: [tile('red', 3), tile('blue', 3), tile('black', 3)] };
     expect(canOpenWith([group])).toBe(false);

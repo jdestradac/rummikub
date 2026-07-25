@@ -42,7 +42,7 @@ export function RoomLobby() {
 
   const handleCopyLink = useCallback(async () => {
     await navigator.clipboard.writeText(shareLink);
-    toast.success('Invite link copied!');
+    toast.success('¡Enlace de invitación copiado!');
   }, [shareLink]);
 
   const setBotCount = useCallback(
@@ -56,9 +56,9 @@ export function RoomLobby() {
           body: JSON.stringify({ botCount: count, hostId: room.myPlayerId }),
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error ?? 'Failed to update bots.');
+        if (!res.ok) throw new Error(data.error ?? 'No se pudieron actualizar los bots.');
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : 'Failed to update bots.');
+        toast.error(err instanceof Error ? err.message : 'No se pudieron actualizar los bots.');
       } finally {
         setUpdatingBots(false);
       }
@@ -76,9 +76,9 @@ export function RoomLobby() {
         body: JSON.stringify({ roomId: room.roomId, hostPlayerId: room.myPlayerId }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? 'Failed to start game.');
+      if (!res.ok) throw new Error(data.error ?? 'No se pudo iniciar la partida.');
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to start game.');
+      toast.error(err instanceof Error ? err.message : 'No se pudo iniciar la partida.');
       setStarting(false);
     }
   }, [room.roomId, room.roomCode, room.myPlayerId]);
@@ -86,22 +86,22 @@ export function RoomLobby() {
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 p-4">
       <div className="rounded-2xl border border-app-border bg-app-surface p-6 text-center">
-        <p className="mb-2 text-sm uppercase tracking-wide text-slate-400">Room code</p>
+        <p className="mb-2 text-sm uppercase tracking-wide text-slate-400">Código de la sala</p>
         <button
           onClick={handleCopy}
           className="mx-auto flex items-center gap-3 rounded-lg bg-app-bg px-6 py-3 font-mono text-4xl font-bold tracking-[0.3em] text-slate-100 transition hover:bg-slate-800"
         >
           {room.roomCode}
-          <span className="text-sm font-sans font-normal text-slate-400">{copied ? 'Copied!' : 'Copy'}</span>
+          <span className="text-sm font-sans font-normal text-slate-400">{copied ? '¡Copiado!' : 'Copiar'}</span>
         </button>
         <button onClick={handleCopyLink} className="mt-3 text-sm text-blue-400 hover:underline">
-          Copy invite link
+          Copiar enlace de invitación
         </button>
       </div>
 
       <div className="rounded-2xl border border-app-border bg-app-surface p-6">
         <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-400">
-          Players ({totalPlayers}/{room.maxPlayers})
+          Jugadores ({totalPlayers}/{room.maxPlayers})
         </h3>
         <ul className="flex flex-col gap-2">
           {room.players.map((p) => (
@@ -123,7 +123,7 @@ export function RoomLobby() {
               )}
               <span
                 className={`h-2.5 w-2.5 rounded-full ${p.isConnected ? 'bg-emerald-400' : 'bg-slate-600'}`}
-                title={p.isConnected ? 'Online' : 'Offline'}
+                title={p.isConnected ? 'Conectado' : 'Desconectado'}
               />
             </motion.li>
           ))}
@@ -157,17 +157,17 @@ export function RoomLobby() {
 
       {host ? (
         <Button size="lg" onClick={handleStart} loading={starting} disabled={!canStart}>
-          {canStart ? 'Start game' : `Need at least ${MIN_PLAYERS} players`}
+          {canStart ? 'Iniciar partida' : `Se necesitan al menos ${MIN_PLAYERS} jugadores`}
         </Button>
       ) : (
-        <p className="text-center text-sm text-slate-400">Waiting for the host to start the game…</p>
+        <p className="text-center text-sm text-slate-400">Esperando a que el anfitrión inicie la partida…</p>
       )}
 
       <button
         onClick={() => router.push('/')}
         className="text-center text-sm text-slate-500 hover:text-slate-300"
       >
-        Leave room
+        Salir de la sala
       </button>
     </div>
   );

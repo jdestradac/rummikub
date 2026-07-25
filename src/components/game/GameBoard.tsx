@@ -39,21 +39,31 @@ export function GameBoard({ roomId, playerId }: GameBoardProps) {
     init(roomId, playerId);
   }, [roomId, playerId, init]);
 
-  // Realtime broadcasts only reach clients already subscribed when they
-  // fire, so pull the current state once on mount to cover fresh loads /
-  // reconnects mid-game.
+  // Realtime broadcasts only reach clients already subscribed at the exact
+  // moment they fire, so pull the current state once on mount (fresh loads /
+  // reconnects) AND poll periodically as a safety net in case a broadcast
+  // gets dropped — without this, a missed "your turn now" message leaves a
+  // player stuck until they manually refresh.
   useEffect(() => {
     let cancelled = false;
-    fetch(`/api/game/state?roomId=${roomId}&playerId=${playerId}`)
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (cancelled || !data) return;
-        hydratePublicState(data.publicState);
-        setMyRack(data.myRack);
-      })
-      .catch(() => undefined);
+
+    const fetchAndHydrate = () => {
+      fetch(`/api/game/state?roomId=${roomId}&playerId=${playerId}`)
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (cancelled || !data) return;
+          hydratePublicState(data.publicState);
+          setMyRack(data.myRack);
+        })
+        .catch(() => undefined);
+    };
+
+    fetchAndHydrate();
+    const interval = setInterval(fetchAndHydrate, 4000);
+
     return () => {
       cancelled = true;
+      clearInterval(interval);
     };
   }, [roomId, playerId, hydratePublicState, setMyRack]);
 
@@ -77,9 +87,9 @@ export function GameBoard({ roomId, playerId }: GameBoardProps) {
       onDragEnd={handleDragEnd}
       onDragCancel={handleDragCancel}
     >
-      <div className="flex h-full min-h-screen w-full flex-col bg-app-bg lg:flex-row">
-        <div className="flex flex-1 flex-col">
-          <div className="flex items-center justify-between gap-3 border-b border-app-border bg-app-surface/60 px-4 py-2">
+      <div className="flex h-screen w-full flex-col overflow-hidden bg-app-bg lg:flex-row">
+        <div className="flex min-h-0 flex-1 flex-col">
+          <div className="flex shrink-0 items-center justify-between gap-3 border-b border-app-border bg-app-surface/60 px-4 py-2">
             <div className="flex flex-wrap gap-2">
               {opponents.map((p) => (
                 <OpponentRack key={p.id} player={p} isCurrentTurn={p.seat === currentTurn} />
@@ -91,20 +101,26 @@ export function GameBoard({ roomId, playerId }: GameBoardProps) {
                 animate={{ opacity: 1 }}
                 className="whitespace-nowrap text-sm text-amber-400"
               >
-                Bot thinking…
+                Bot pensando…
               </motion.span>
             )}
           </div>
 
-          <div className="min-h-[50vh] flex-1 p-3">
+          {/* min-h-0 is load-bearing here: without it a flex child never
+              shrinks below its content size, so Board's internal
+              overflow-auto never kicks in and groups spill past the
+              viewport instead of scrolling within the felt area. */}
+          <div className="min-h-0 flex-1 p-3">
             <Board />
           </div>
 
-          <PlayerRack />
-          <ActionBar roomId={roomId} playerId={playerId} />
+          <div className="shrink-0">
+            <PlayerRack />
+            <ActionBar roomId={roomId} playerId={playerId} />
+          </div>
         </div>
 
-        <aside className="flex w-full flex-col gap-3 border-t border-app-border bg-app-bg p-3 lg:w-80 lg:border-l lg:border-t-0">
+        <aside className="flex w-full min-h-0 flex-col gap-3 overflow-y-auto border-t border-app-border bg-app-bg p-3 lg:w-80 lg:border-l lg:border-t-0">
           <Scoreboard />
           <div className="min-h-[200px] flex-1">
             <GameLog />

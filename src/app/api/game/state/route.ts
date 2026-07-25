@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
       playerId: searchParams.get('playerId'),
     });
     if (!parsed.success) {
-      return NextResponse.json({ error: 'Invalid request.' }, { status: 400 });
+      return NextResponse.json({ error: 'Solicitud inválida.' }, { status: 400 });
     }
     const { roomId, playerId } = parsed.data;
 
@@ -31,16 +31,16 @@ export async function GET(request: NextRequest) {
     const {
       data: { user },
     } = await authClient.auth.getUser();
-    if (!user) return NextResponse.json({ error: 'Not authenticated.' }, { status: 401 });
+    if (!user) return NextResponse.json({ error: 'No autenticado.' }, { status: 401 });
 
     const supabase = getSupabaseServiceRoleClient();
     const player = await getPlayerById(supabase, playerId);
     if (!player || player.room_id !== roomId || player.user_id !== user.id) {
-      return NextResponse.json({ error: 'You are not a member of this game.' }, { status: 403 });
+      return NextResponse.json({ error: 'No eres parte de esta partida.' }, { status: 403 });
     }
 
     const loaded = await fetchServerGameState(supabase, roomId);
-    if (!loaded) return NextResponse.json({ error: 'Game has not started yet.' }, { status: 404 });
+    if (!loaded) return NextResponse.json({ error: 'La partida aún no ha comenzado.' }, { status: 404 });
 
     return NextResponse.json({
       publicState: toPublicGameState(loaded.state),
@@ -48,6 +48,6 @@ export async function GET(request: NextRequest) {
     });
   } catch (err) {
     console.error('GET /api/game/state failed:', err);
-    return NextResponse.json({ error: 'Failed to load game state.' }, { status: 500 });
+    return NextResponse.json({ error: 'No se pudo cargar el estado de la partida.' }, { status: 500 });
   }
 }

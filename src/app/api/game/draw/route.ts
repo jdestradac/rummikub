@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     const json = await request.json();
     const parsed = bodySchema.safeParse(json);
     if (!parsed.success) {
-      return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Invalid request.' }, { status: 400 });
+      return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Solicitud inválida.' }, { status: 400 });
     }
     const { roomId, playerId } = parsed.data;
 
@@ -40,6 +40,6 @@ export async function POST(request: NextRequest) {
     });
   } catch (err) {
     console.error('POST /api/game/draw failed:', err);
-    return NextResponse.json({ error: 'Failed to draw a tile.' }, { status: 500 });
+    return NextResponse.json({ error: 'No se pudo robar una ficha.' }, { status: 500 });
   }
 }

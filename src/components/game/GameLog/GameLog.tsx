@@ -25,9 +25,9 @@ export function GameLog() {
 
   return (
     <div className="flex h-full flex-col rounded-xl border border-app-border bg-app-surface p-4">
-      <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-400">Game log</h3>
+      <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-400">Historial</h3>
       <div ref={scrollRef} className="flex-1 space-y-1.5 overflow-y-auto pr-1 text-sm">
-        {events.length === 0 && <p className="text-slate-500">No moves yet.</p>}
+        {events.length === 0 && <p className="text-slate-500">Todavía no hay movimientos.</p>}
         {events.map((event) => (
           <motion.div
             key={event.id}

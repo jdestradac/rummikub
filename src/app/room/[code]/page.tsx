@@ -123,9 +123,9 @@ export default function RoomPage({ params }: RoomPageProps) {
   if (notFound) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4">
-        <p className="text-lg text-slate-300">Room not found.</p>
+        <p className="text-lg text-slate-300">Sala no encontrada.</p>
         <button onClick={() => router.push('/')} className="text-blue-400 hover:underline">
-          Back to home
+          Volver al inicio
         </button>
       </div>
     );

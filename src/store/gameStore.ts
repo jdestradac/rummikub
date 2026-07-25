@@ -102,6 +102,12 @@ export const useGameStore = create<GameStoreState>((set) => ({
   reset: () => set(initialState),
 }));
 
+/** The value a tile sorts/clusters by within a given rack sort mode. */
+export function rackClusterKey(tile: Tile, sort: RackSort): string {
+  const number = tile.isJoker ? (tile.representsNumber ?? 99) : (tile.number ?? 0);
+  return sort === 'number' ? String(number) : tile.color;
+}
+
 export function sortRack(rack: Tile[], sort: RackSort): Tile[] {
   const sorted = [...rack];
   if (sort === 'number') {

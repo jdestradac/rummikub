@@ -25,9 +25,9 @@ const COLOR_TEXT_CLASS: Record<TileColor, string> = {
 };
 
 const SIZE_CLASS = {
-  sm: 'h-10 w-7 text-sm',
-  md: 'h-14 w-10 text-lg',
-  lg: 'h-16 w-12 text-xl',
+  sm: 'h-11 w-8 text-base',
+  md: 'h-16 w-11 text-2xl',
+  lg: 'h-20 w-14 text-3xl',
 };
 
 export function Tile({ tile, draggable = false, selected = false, disabled = false, size = 'md', dragData, onClick }: TileProps) {
@@ -43,10 +43,12 @@ export function Tile({ tile, draggable = false, selected = false, disabled = fal
         tile={tile}
         selected={selected}
         size={size}
+        draggable={draggable}
         setNodeRef={draggable ? setNodeRef : undefined}
-        style={
-          transform ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0) scale(1.1)` } : undefined
-        }
+        style={{
+          ...(transform ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0) scale(1.1)` } : {}),
+          WebkitTouchCallout: 'none',
+        }}
         attributes={draggable ? attributes : undefined}
         listeners={draggable ? listeners : undefined}
         isDragging={isDragging}
@@ -56,9 +58,10 @@ export function Tile({ tile, draggable = false, selected = false, disabled = fal
     );
   }
 
-  const style = transform
-    ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0) scale(1.1)`, zIndex: 50 }
-    : undefined;
+  const style = {
+    ...(transform ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0) scale(1.1)`, zIndex: 50 } : {}),
+    WebkitTouchCallout: 'none' as const,
+  };
 
   return (
     <motion.button
@@ -68,28 +71,23 @@ export function Tile({ tile, draggable = false, selected = false, disabled = fal
       onClick={() => onClick?.(tile)}
       disabled={disabled}
       className={cn(
-        'relative flex select-none flex-col items-center justify-start rounded-lg bg-tile-bg pt-1 font-black shadow-tile transition-opacity',
+        'relative flex select-none items-center justify-center rounded-lg bg-gradient-to-b from-white via-tile-bg to-[#f2e6d6] font-black shadow-tile transition-opacity',
         SIZE_CLASS[size],
+        draggable && 'touch-none',
         disabled && 'cursor-not-allowed opacity-50',
         !disabled && draggable && 'cursor-grab active:cursor-grabbing',
         isDragging && 'opacity-40 shadow-tile-dragging',
         selected && !isDragging && 'shadow-tile-selected animate-pulse-border',
       )}
-      animate={selected && !isDragging ? { y: -4 } : { y: 0 }}
-      transition={{ duration: 0.15 }}
+      animate={selected && !isDragging ? { y: -5 } : { y: 0 }}
+      whileHover={!disabled && draggable && !isDragging ? { y: -2 } : undefined}
+      transition={{ duration: 0.12, ease: 'easeOut' }}
       {...(draggable ? attributes : {})}
       {...(draggable ? listeners : {})}
     >
       <span className={cn(COLOR_TEXT_CLASS[tile.color as TileColor], 'leading-none drop-shadow-sm')}>
         {tile.number}
       </span>
-      <span
-        className={cn(
-          'mt-0.5 h-1 w-1 rounded-full opacity-60',
-          COLOR_TEXT_CLASS[tile.color as TileColor],
-          'bg-current',
-        )}
-      />
     </motion.button>
   );
 }

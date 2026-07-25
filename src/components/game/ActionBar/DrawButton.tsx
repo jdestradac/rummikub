@@ -18,7 +18,7 @@ export function DrawButton({ roomId, playerId }: { roomId: string | null; player
       loading={isSubmitting}
       onClick={() => drawTile()}
     >
-      Draw tile
+      🁪 Robar ficha
       <span className="ml-1 rounded bg-black/20 px-1.5 py-0.5 text-xs font-mono">{drawPileCount}</span>
     </Button>
   );

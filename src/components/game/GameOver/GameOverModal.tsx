@@ -31,9 +31,9 @@ export function GameOverModal({ roomId, hostPlayerId, myPlayerId }: GameOverModa
         body: JSON.stringify({ roomId, hostPlayerId }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? 'Failed to restart the game.');
+      if (!res.ok) throw new Error(data.error ?? 'No se pudo reiniciar la partida.');
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to restart the game.');
+      toast.error(err instanceof Error ? err.message : 'No se pudo reiniciar la partida.');
     }
   }
 
@@ -41,10 +41,10 @@ export function GameOverModal({ roomId, hostPlayerId, myPlayerId }: GameOverModa
   const sortedScores = [...scores].sort((a, b) => b.score - a.score);
 
   return (
-    <Modal open={phase === 'finished'} dismissible={false} title="Game over">
+    <Modal open={phase === 'finished'} dismissible={false} title="Fin de la partida">
       <div className="flex flex-col gap-4">
         <p className="text-center text-lg">
-          <span className="font-bold text-amber-400">{winner?.name ?? 'Someone'}</span> wins! 🎉
+          <span className="font-bold text-amber-400">{winner?.name ?? 'Alguien'}</span> ganó 🎉
         </p>
 
         <ul className="flex flex-col gap-1.5">
@@ -65,11 +65,11 @@ export function GameOverModal({ roomId, hostPlayerId, myPlayerId }: GameOverModa
         <div className="flex gap-3">
           {isHost && (
             <Button variant="success" className="flex-1" onClick={handlePlayAgain}>
-              Play again
+              Jugar de nuevo
             </Button>
           )}
           <Button variant="secondary" className="flex-1" onClick={() => router.push('/')}>
-            Leave
+            Salir
           </Button>
         </div>
       </div>

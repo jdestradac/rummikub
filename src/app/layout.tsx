@@ -4,7 +4,7 @@ import { ToastContainer } from '@/components/ui/Toast';
 
 export const metadata: Metadata = {
   title: 'Rummikub Online',
-  description: 'Play Rummikub with friends in real time — free, no download required.',
+  description: 'Juega Rummikub con amigos en tiempo real — gratis, sin descargas.',
 };
 
 export const viewport: Viewport = {
@@ -15,7 +15,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="es">
       <body className="min-h-screen bg-app-bg text-slate-100 antialiased">
         {children}
         <ToastContainer />

@@ -16,12 +16,12 @@ export async function POST(request: NextRequest) {
     const json = await request.json();
     const parsed = bodySchema.safeParse(json);
     if (!parsed.success) {
-      return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Invalid request.' }, { status: 400 });
+      return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Solicitud inválida.' }, { status: 400 });
     }
     const { name, maxPlayers, botCount } = parsed.data;
 
     if (botCount > maxPlayers - 1) {
-      return NextResponse.json({ error: 'Too many bots for the selected player count.' }, { status: 400 });
+      return NextResponse.json({ error: 'Demasiados bots para la cantidad de jugadores elegida.' }, { status: 400 });
     }
 
     const authClient = getSupabaseServerClient();
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
 
     if (!user) {
       return NextResponse.json(
-        { error: 'No authenticated session. Reload the page and try again.' },
+        { error: 'No hay una sesión autenticada. Recarga la página e intenta de nuevo.' },
         { status: 401 },
       );
     }
@@ -52,6 +52,6 @@ export async function POST(request: NextRequest) {
     });
   } catch (err) {
     console.error('POST /api/rooms failed:', err);
-    return NextResponse.json({ error: 'Failed to create room.' }, { status: 500 });
+    return NextResponse.json({ error: 'No se pudo crear la sala.' }, { status: 500 });
   }
 }

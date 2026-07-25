@@ -41,7 +41,7 @@ export function useGameActions(roomId: string | null, playerId: string | null) {
         if (data.myRack) setMyRack(data.myRack);
 
         if (!data.success) {
-          const message = data.error ?? 'That arrangement is not valid.';
+          const message = data.error ?? 'Ese arreglo no es válido.';
           setError(message);
           toast.error(message);
         } else if (
@@ -57,7 +57,7 @@ export function useGameActions(roomId: string | null, playerId: string | null) {
 
         return data.success;
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Network error — please try again.';
+        const message = err instanceof Error ? err.message : 'Error de red — intenta de nuevo.';
         setError(message);
         toast.error(message);
         return false;
@@ -100,7 +100,7 @@ export function useGameActions(roomId: string | null, playerId: string | null) {
     const ok = await dispatch({ type: 'CONFIRM_TURN' });
     if (ok) {
       selectTile(null);
-      toast.success('Turn confirmed!');
+      toast.success('¡Turno confirmado!');
     }
     return ok;
   }, [dispatch, selectTile]);
@@ -124,11 +124,11 @@ export function useGameActions(roomId: string | null, playerId: string | null) {
       if (data.myRack) setMyRack(data.myRack);
 
       if (!data.success) {
-        const message = data.error ?? 'Could not draw a tile.';
+        const message = data.error ?? 'No se pudo robar una ficha.';
         setError(message);
         toast.error(message);
       } else {
-        toast.info('You drew a tile.');
+        toast.info('Robaste una ficha.');
       }
 
       return data.success;
